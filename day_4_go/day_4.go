@@ -48,46 +48,28 @@ func findAnyOverlap(low_1, high_1, low_2, high_2 int) bool {
 	return true
 }
 
-func part_1() {
+func main() {
 	f, err := os.Open("input/input.txt")
 	checkError(err)
 
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	count := 0
+	count_p1 := 0
+	count_p2 := 0
 	for scanner.Scan() {
 		pairs := getPairs(scanner.Text())
 		low_1, high_1 := getRange(pairs[0])
 		low_2, high_2 := getRange(pairs[1])
 
 		if findFullOverlap(low_1, high_1, low_2, high_2) {
-			count += 1
+			count_p1 += 1
 		}
-	}
-
-	fmt.Println("Part 1: ", count)
-}
-
-func main() {
-	part_1()
-
-	f, err := os.Open("input/input.txt")
-	checkError(err)
-
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	count := 0
-	for scanner.Scan() {
-		pairs := getPairs(scanner.Text())
-		low_1, high_1 := getRange(pairs[0])
-		low_2, high_2 := getRange(pairs[1])
-
 		if findAnyOverlap(low_1, high_1, low_2, high_2) {
-			count += 1
+			count_p2 += 1
 		}
 	}
 
-	fmt.Println("Part 2: ", count)
+	fmt.Println("Part 1: ", count_p1)
+	fmt.Println("Part 2: ", count_p2)
 }
