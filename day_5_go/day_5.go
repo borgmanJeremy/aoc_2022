@@ -72,22 +72,38 @@ func part_1(col_list [][]rune, instructionList []instruction) {
 			new_col := append([]rune{value}, col_list[instruction.dst]...)
 			col_list[instruction.dst] = new_col
 			col_list[instruction.src] = col_list[instruction.src][1:]
-
 		}
 	}
 
-	fmt.Printf("%c \n", col_list)
+	// fmt.Printf("%c \n", col_list)
+	for _, col := range col_list {
+		fmt.Printf("%c", col[0])
+	}
+	fmt.Println()
+}
+
+func part_2(col_list [][]rune, instructionList []instruction) {
+	for _, instruction := range instructionList {
+		new_vals := append([]rune{}, col_list[instruction.src][0:instruction.qty]...)
+		original_vals := col_list[instruction.dst]
+		new_col := append(new_vals, original_vals...)
+
+		col_list[instruction.dst] = new_col
+		col_list[instruction.src] = col_list[instruction.src][instruction.qty:]
+	}
+
+	// fmt.Printf("%c \n", col_list)
 	for _, col := range col_list {
 		fmt.Printf("%c", col[0])
 	}
 }
 
 func main() {
-	col_list := parseCols("input/sample/col.txt")
-	fmt.Printf("%c", col_list)
-
-	instructionList := parseInstructions("input/sample/instructions.txt")
-	fmt.Println(instructionList)
-
+	col_list := parseCols("input/puzzle/col.txt")
+	instructionList := parseInstructions("input/puzzle/instructions.txt")
 	part_1(col_list, instructionList)
+
+	col_list = parseCols("input/puzzle/col.txt")
+	instructionList = parseInstructions("input/puzzle/instructions.txt")
+	part_2(col_list, instructionList)
 }
