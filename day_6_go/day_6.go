@@ -36,10 +36,17 @@ func main() {
 	scanner := bufio.NewScanner(instructions)
 	scanner.Scan()
 	line := scanner.Text()
+
 	for idx := 0; idx < len(line)-3; idx++ {
-		// fmt.Println("idx: ", idx+4, " ", line[idx:idx+4])
 		if checkUnique(line[idx : idx+4]) {
 			fmt.Println("Part 1: ", idx+4)
+			break
+		}
+	}
+
+	for idx := 0; idx < len(line)-13; idx++ {
+		if checkUnique(line[idx : idx+14]) {
+			fmt.Println("Part 2: ", idx+14)
 			break
 		}
 	}
