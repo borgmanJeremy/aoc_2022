@@ -33,6 +33,7 @@ description = "golang dev environment";
               gocode-gomod
               godef
               golint
+              graphviz
 ];
           };
       });

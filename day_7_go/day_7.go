@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 
+	"example.com/day_7/pathMap"
 	"github.com/dominikbraun/graph"
 	"github.com/dominikbraun/graph/draw"
 )
@@ -19,117 +19,80 @@ func checkError(err error) {
 	}
 }
 
-type KeyValue struct {
-	Key   string
-	Value int
-}
+type NodeType int
 
-func sortMap(myMap map[string]int) map[string]int {
-	pairs := make([]KeyValue, len(myMap))
-	i := 0
-	for k, v := range myMap {
-		pairs[i] = KeyValue{k, v}
-		i++
-	}
-
-	sort.Slice(pairs, func(i, j int) bool {
-		return pairs[i].Value > pairs[j].Value
-	})
-
-	sortedMap := make(map[string]int)
-	for _, pair := range pairs {
-		sortedMap[pair.Key] = pair.Value
-	}
-	return sortedMap
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
+const (
+	Folder NodeType = iota
+	File
+)
 
 type Node struct {
-	Name string
 	Id   int
 	Size int
-	Type string
+	Type NodeType
 }
 
 func nodeHash(n Node) int {
 	return n.Id
 }
 
-func findParent(g graph.Graph[string, Node], currentNode string) string {
-	am, _ := g.AdjacencyMap()
-	for _, node := range am[currentNode] {
-		prop := node.Properties.Attributes
-		if prop["type"] == "parent" {
-			return node.Target
+func pathStackToString(pathStack []string) string {
+	path := ""
+	if len(pathStack) == 1 {
+		return "/"
+	}
+	for idx, dir := range pathStack {
+		if idx != 0 {
+			path += "/" + dir
 		}
 	}
-	file, _ := os.Create("./mygraph.gv")
-	_ = draw.DOT(g, file)
-
-	log.Fatal("Could not find Parent")
-	return ""
+	return path
 }
 
-func directorySize(g graph.Graph[string, Node], currentNode string) int {
-	am, _ := g.AdjacencyMap()
-	size := 0
-	for _, node := range am[currentNode] {
-		vertex, _ := g.Vertex(node.Target)
-		prop := node.Properties.Attributes
+func addDir(pathMap pathMap.PathMap, g *graph.Graph[int, Node], currentId int, path string) {
 
-		if prop["type"] == "child" {
-			if vertex.Type == "folder" {
-				size += directorySize(g, node.Target)
-			} else {
-				size += vertex.Size
-			}
-		}
+	if _, ok := pathMap.PMap[path]; !ok {
+		pathMap.AddKey(path)
+		g.AddVertex(Node{
+			Id:   pathMap.PMap[path],
+			Size: 0,
+			Type: Folder,
+		})
+		*g.AddEdge(currentId, pathMap.PMap[path], graph.EdgeAttribute("type", "child"))
+		*g.AddEdge(pathMap.PMap[path], currentId, graph.EdgeAttribute("type", "parent"))
 	}
-	return size
 }
 
 func main() {
-	instructions, err := os.Open("input/input.txt")
+	instructions, err := os.Open("input/sample.txt")
 	checkError(err)
 	defer instructions.Close()
 
-	id := 0
-	g := graph.New(nodeHash, graph.Directed(), graph.Acyclic())
-	g.AddVertex(Node{"/", id, 0, "folder"})
-	id += 1
-
-	currentNodeId := 0
-	dirList := []string{}
-	dirList = append(dirList, "/")
 	scanner := bufio.NewScanner(instructions)
+	pathStack := []string{}
+	pathMap := pathMap.New()
+	pathMap.AddKey("/")
+	//create Node
+	g := graph.New(nodeHash, graph.Directed(), graph.Acyclic())
 
+	currentId := 0
 	count := 0
-	// Buliding Tree
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(count, ":", line)
-
-		count += 1
+		fmt.Println(count, ": ", line)
 		if line[0] == '$' {
 			tokens := strings.Split(line, " ")
 			if tokens[1] == "ls" {
-
+				// Do nothing
 			} else if tokens[1] == "cd" {
 				if tokens[2] == ".." {
-					parentId := findParent(g, currentNodeId)
-					currentNodeId = parentId
+					pathStack = pathStack[:len(pathStack)-1]
+					currentId = pathMap.PMap[pathStackToString(pathStack)]
 				} else {
-					if tokens[2] != "/" {
-						currentNode = tokens[2]
-					}
+					pathStack = append(pathStack, tokens[2])
+					path := pathStackToString(pathStack)
+					pathMap.AddKey(path)
+					currentId = pathMap.PMap[pathStackToString(pathStack)]
 				}
 			} else {
 				log.Fatal("Invalid command")
@@ -137,40 +100,33 @@ func main() {
 		} else {
 			// handle files and dirs
 			tokens := strings.Split(line, " ")
+			path := pathStackToString(append(pathStack, tokens[1]))
+
 			if tokens[0] == "dir" {
-				if !contains(dirList, tokens[1]) {
-					dirList = append(dirList, tokens[1])
-
-					g.AddVertex(Node{tokens[1], id, 0, "folder"})
-					id += 1
+				if _, ok := pathMap.PMap[path]; !ok {
+					pathMap.AddKey(path)
+					g.AddVertex(Node{
+						Id:   pathMap.PMap[path],
+						Size: 0,
+						Type: Folder,
+					})
+					g.AddEdge(currentId, pathMap.PMap[path], graph.EdgeAttribute("type", "child"))
+					g.AddEdge(pathMap.PMap[path], currentId, graph.EdgeAttribute("type", "parent"))
 				}
-
-				g.AddEdge(currentNode, tokens[1], graph.EdgeAttribute("type", "child"))
-				g.AddEdge(tokens[1], currentNode, graph.EdgeAttribute("type", "parent"))
 			} else {
-				weight, _ := strconv.Atoi(tokens[0])
-				g.AddVertex(Node{tokens[1], weight, "file"})
-				g.AddEdge(currentNode, tokens[1], graph.EdgeAttribute("type", "child"))
-				g.AddEdge(tokens[1], currentNode, graph.EdgeAttribute("type", "parent"))
+				// file
+				size, _ := strconv.Atoi(tokens[0])
+				pathMap.AddKey(path)
+				g.AddVertex(Node{
+					Id:   pathMap.PMap[path],
+					Size: size,
+					Type: File,
+				})
+				g.AddEdge(currentId, pathMap.PMap[path], graph.EdgeAttribute("type", "child"))
+				g.AddEdge(pathMap.PMap[path], currentId, graph.EdgeAttribute("type", "parent"))
 			}
 		}
+		file, _ := os.Create("./mygraph.gv")
+		_ = draw.DOT(g, file)
 	}
-
-	dirSize := make(map[string]int)
-	for _, dir := range dirList {
-		dirSize[dir] = directorySize(g, dir)
-	}
-	part_1 := 0
-	for _, dir := range dirList {
-		if dirSize[dir] <= 100000 {
-			fmt.Println(dir, dirSize[dir])
-			part_1 += dirSize[dir]
-		}
-	}
-
-	fmt.Println("Part 1: ", part_1)
-
-	//file, _ := os.Create("./mygraph.gv")
-	//_ = draw.DOT(g, file)
-
 }
