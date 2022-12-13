@@ -30,39 +30,9 @@ func printMap(treeMap [][]mapElement) {
 		}
 		fmt.Println()
 	}
-
-	// fmt.Println()
-	// for i := 0; i < len(treeMap); i++ {
-	// 	for j := 0; j < len(treeMap[i]); j++ {
-	// 		if treeMap[i][j].visible == true {
-	// 			fmt.Print(treeMap[i][j].height, " ")
-	// 		} else {
-	// 			fmt.Print(" ", " ")
-	// 		}
-	// 	}
-	// 	fmt.Println()
-	// }
-
 }
 
-func main() {
-	instructions, err := os.Open("input/input.txt")
-	checkError(err)
-	defer instructions.Close()
-
-	scanner := bufio.NewScanner(instructions)
-
-	// Read in map
-	treeMap := make([][]mapElement, 0)
-	for scanner.Scan() {
-		line := scanner.Text()
-		row := make([]mapElement, 0)
-		for i := 0; i < len(line); i++ {
-			row = append(row, mapElement{int(line[i]) - 48, false})
-		}
-		treeMap = append(treeMap, row)
-	}
-
+func part_1(treeMap [][]mapElement) {
 	// Mark Edges visible
 	for i := 0; i < len(treeMap[0]); i++ {
 		treeMap[0][i].visible = true
@@ -118,8 +88,6 @@ func main() {
 		}
 	}
 
-	printMap(treeMap)
-
 	// Count visible
 	visibleCount := 0
 	for i := 0; i < len(treeMap); i++ {
@@ -130,4 +98,107 @@ func main() {
 		}
 	}
 	fmt.Println("\nPart 1 ", visibleCount)
+
+}
+
+func main() {
+	instructions, err := os.Open("input/input.txt")
+	checkError(err)
+	defer instructions.Close()
+
+	scanner := bufio.NewScanner(instructions)
+
+	// Read in map
+	treeMap := make([][]mapElement, 0)
+	for scanner.Scan() {
+		line := scanner.Text()
+		row := make([]mapElement, 0)
+		for i := 0; i < len(line); i++ {
+			row = append(row, mapElement{int(line[i]) - 48, false})
+		}
+		treeMap = append(treeMap, row)
+	}
+	part_1(treeMap)
+
+	// i := 3
+	// j := 2
+	// down := scanDown(i, j, treeMap)
+	// up := scanUp(i, j, treeMap)
+	// right := scanRight(i, j, treeMap)
+	// left := scanLeft(i, j, treeMap)
+	// test := down * up * right * left
+	// fmt.Println(test)
+
+	//max_row := 0
+	//max_col := 0
+	max_val := 0
+	for i := 0; i < len(treeMap); i++ {
+		for j := 0; j < len(treeMap[i]); j++ {
+			val := scanDown(i, j, treeMap) * scanUp(i, j, treeMap) * scanRight(i, j, treeMap) * scanLeft(i, j, treeMap)
+			if val > max_val {
+				max_val = val
+				//max_row = i
+				//max_col = j
+			}
+		}
+	}
+	fmt.Println("Part 2 ", max_val)
+
+}
+
+func scanDown(row, col int, treeMap [][]mapElement) int {
+	height := treeMap[row][col].height
+	count := 0
+	for i := row + 1; i < len(treeMap); i++ {
+		if height > treeMap[i][col].height {
+			count++
+		} else {
+			count++
+			break
+		}
+	}
+	return count
+}
+
+func scanUp(row, col int, treeMap [][]mapElement) int {
+	height := treeMap[row][col].height
+	count := 0
+	for i := row - 1; i >= 0; i-- {
+		newHeight := treeMap[i][col].height
+		if height > newHeight {
+			count++
+		} else {
+			count++
+			break
+		}
+	}
+	return count
+}
+
+func scanRight(row, col int, treeMap [][]mapElement) int {
+	height := treeMap[row][col].height
+	count := 0
+	for i := col + 1; i < len(treeMap[row]); i++ {
+		if height > treeMap[row][i].height {
+			count++
+		} else {
+			count++
+			break
+		}
+	}
+	return count
+}
+
+func scanLeft(row, col int, treeMap [][]mapElement) int {
+	height := treeMap[row][col].height
+	count := 0
+	for i := col - 1; i >= 0; i-- {
+		if height > treeMap[row][i].height {
+			count++
+		} else {
+			count++
+			break
+		}
+	}
+	return count
 }
