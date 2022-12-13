@@ -152,4 +152,30 @@ func main() {
 
 	// part 1
 	part_1(g, pathMap)
+
+	totalSpace := 70000000
+	usedSpace := directorySize(g, 0)
+	freeSpace := totalSpace - usedSpace
+
+	fmt.Println("\nPart 2:")
+	fmt.Println("Used: ", usedSpace)
+	fmt.Println("Free: ", freeSpace)
+
+	target := 30000000
+	_ = target
+
+	candidateSize := totalSpace
+	for _, id := range pathMap.PMap {
+		vertex, _ := g.Vertex(id)
+		if vertex.Type == Folder {
+			size := directorySize(g, id)
+			newFreeSpace := freeSpace + size
+			if newFreeSpace >= target {
+				if size < candidateSize {
+					candidateSize = size
+				}
+			}
+		}
+	}
+	fmt.Println("Candidate size: ", candidateSize)
 }
