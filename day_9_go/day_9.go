@@ -129,10 +129,18 @@ func main() {
 
 	scanner := bufio.NewScanner(instructions)
 	headPos := Point{0, 0}
-	tailPos := Point{0, 0}
+	knot1Pos := Point{0, 0}
+	knot2Pos := Point{0, 0}
+	knot3Pos := Point{0, 0}
+	knot4Pos := Point{0, 0}
+	knot5Pos := Point{0, 0}
+	knot6Pos := Point{0, 0}
+	knot7Pos := Point{0, 0}
+	knot8Pos := Point{0, 0}
+	knot9Pos := Point{0, 0}
 
 	headHistory := make(map[Point]bool)
-	tailHistory := make(map[Point]bool)
+	knot9 := make(map[Point]bool)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -143,13 +151,21 @@ func main() {
 
 		for i := 0; i < magnitude; i++ {
 			headPos = moveHead(headPos, dir)
-			tailPos = moveTail(headPos, tailPos)
+			knot1Pos = moveTail(headPos, knot1Pos)
+			knot2Pos = moveTail(knot1Pos, knot2Pos)
+			knot3Pos = moveTail(knot2Pos, knot3Pos)
+			knot4Pos = moveTail(knot3Pos, knot4Pos)
+			knot5Pos = moveTail(knot4Pos, knot5Pos)
+			knot6Pos = moveTail(knot5Pos, knot6Pos)
+			knot7Pos = moveTail(knot6Pos, knot7Pos)
+			knot8Pos = moveTail(knot7Pos, knot8Pos)
+			knot9Pos = moveTail(knot8Pos, knot9Pos)
 
 			headHistory[headPos] = true
-			tailHistory[tailPos] = true
+			knot9[knot9Pos] = true
 		}
 
 	}
-	fmt.Println(len(tailHistory))
+	fmt.Println(len(knot9))
 
 }
