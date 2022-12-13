@@ -39,16 +39,25 @@ type CPU struct {
 	clockQueue int
 	pendingAdd bool
 
-	instructions []string
+	instructionPointer int
+	instructions       []string
 }
 
-func makeCPU(instructions []string) CPU {
+func makeCPU(instructions []string) *CPU {
+	cpu := new(CPU)
+
 	cpu.clock = 0
 	cpu.regX = 0
-	cpu.clockQueue = 0
 	cpu.pendingAdd = false
+	cpu.instructionPointer = 0
+
 	copy(cpu.instructions, instructions)
 	return cpu
+}
+
+func (cpu *CPU) addx(number int) {
+	cpu.pendingAdd = true
+	cpu.clockQueue = 2
 }
 
 func (cpu *CPU) decode(instruction string) {
@@ -58,20 +67,13 @@ func (cpu *CPU) decode(instruction string) {
 	switch opCode {
 	case addx:
 		number, _ := strconv.Atoi(tokens[1])
+		_ = number
 		cpu.addx(number)
 	case noop:
-		cpu.noop()
 	}
-
-}
-
-func (cpu *CPU) noop() {
-}
-func (cpu *CPU) addx(input int) {
 }
 
 func (cpu *CPU) tick() {
-	cpu.clock += 1
 
 	if cpu.pendingAdd {
 		if cpu.clockQueue > 0 {
@@ -80,7 +82,12 @@ func (cpu *CPU) tick() {
 			cpu.regX += 1
 			cpu.pendingAdd = false
 		}
+	} else {
+		cpu.decode(cpu.instructions[cpu.instructionPointer])
+		cpu.instructionPointer += 1
 	}
+
+	cpu.clock += 1
 }
 
 func main() {
@@ -97,6 +104,7 @@ func main() {
 	}
 
 	// create new cpu
-	cpu := new(CPU)
+	cpu := makeCPU(instructionList)
+	cpu.tick()
 
 }
