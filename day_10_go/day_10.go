@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -35,29 +36,35 @@ func decodeOpCode(input string) OpCode {
 type CPU struct {
 	clock int
 	regX  int
+	add   int
 
 	clockQueue int
 	pendingAdd bool
 
 	instructionPointer int
 	instructions       []string
+
+	strength int
 }
 
 func makeCPU(instructions []string) *CPU {
 	cpu := new(CPU)
 
 	cpu.clock = 0
-	cpu.regX = 0
+	cpu.regX = 1
+	cpu.add = 0
+	cpu.strength = 0
 	cpu.pendingAdd = false
 	cpu.instructionPointer = 0
-
+	cpu.instructions = make([]string, len(instructions))
 	copy(cpu.instructions, instructions)
 	return cpu
 }
 
 func (cpu *CPU) addx(number int) {
 	cpu.pendingAdd = true
-	cpu.clockQueue = 2
+	cpu.clockQueue = 1
+	cpu.add = number
 }
 
 func (cpu *CPU) decode(instruction string) {
@@ -75,11 +82,18 @@ func (cpu *CPU) decode(instruction string) {
 
 func (cpu *CPU) tick() {
 
+	cpu.clock += 1
+	if cpu.clock == 20 {
+		fmt.Println("clock: ", cpu.clock, "regx: ", cpu.regX)
+		cpu.strength += (cpu.clock * cpu.regX)
+	} else if (cpu.clock-20)%40 == 0 {
+		fmt.Println("clock: ", cpu.clock, "regx: ", cpu.regX)
+		cpu.strength += (cpu.clock * cpu.regX)
+	}
 	if cpu.pendingAdd {
-		if cpu.clockQueue > 0 {
-			cpu.clockQueue -= 1
-		} else {
-			cpu.regX += 1
+		cpu.clockQueue -= 1
+		if cpu.clockQueue == 0 {
+			cpu.regX += cpu.add
 			cpu.pendingAdd = false
 		}
 	} else {
@@ -87,11 +101,10 @@ func (cpu *CPU) tick() {
 		cpu.instructionPointer += 1
 	}
 
-	cpu.clock += 1
 }
 
 func main() {
-	instructions, err := os.Open("input/sample.txt")
+	instructions, err := os.Open("input/input.txt")
 	checkError(err)
 
 	defer instructions.Close()
@@ -105,6 +118,9 @@ func main() {
 
 	// create new cpu
 	cpu := makeCPU(instructionList)
-	cpu.tick()
 
+	for cpu.instructionPointer < len(cpu.instructions) {
+		cpu.tick()
+	}
+	fmt.Println("strength: ", cpu.strength)
 }
