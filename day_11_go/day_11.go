@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -28,15 +29,15 @@ type OperationData struct {
 }
 
 type Monkey struct {
-	items           []int
+	items           []uint64
 	operation       OperationData
-	testConstant    int
-	trueMonkey      int
-	falseMonkey     int
+	testConstant    uint64
+	trueMonkey      uint64
+	falseMonkey     uint64
 	inspectionCount int
 }
 
-func parseItems(scanner *bufio.Scanner) []int {
+func parseItems(scanner *bufio.Scanner) []uint64 {
 	scanner.Scan()
 	line := scanner.Text()
 	tokens := strings.Split(line, ":")
@@ -44,9 +45,9 @@ func parseItems(scanner *bufio.Scanner) []int {
 	for i := 0; i < len(nums); i++ {
 		nums[i] = strings.Trim(nums[i], " ")
 	}
-	itemList := make([]int, 0)
+	itemList := make([]uint64, 0)
 	for _, num := range nums {
-		iNum, _ := strconv.Atoi(num)
+		iNum, _ := strconv.ParseUint(num, 10, 64)
 		itemList = append(itemList, iNum)
 	}
 	return itemList
@@ -70,11 +71,11 @@ func parseOperationData(scanner *bufio.Scanner) OperationData {
 	return operationData
 }
 
-func parseTestConstant(scanner *bufio.Scanner) int {
+func parseTestConstant(scanner *bufio.Scanner) uint64 {
 	scanner.Scan()
 	line := scanner.Text()
 	tokens := strings.Split(line, " ")
-	divisor, _ := strconv.Atoi(tokens[len(tokens)-1])
+	divisor, _ := strconv.ParseUint(tokens[len(tokens)-1], 10, 64)
 	return divisor
 }
 
@@ -110,16 +111,21 @@ func main() {
 		}
 	}
 
-	for i := 0; i < 20; i++ {
+	var gcf uint64 = 1
+	for _, monkey := range monkeyList {
+		gcf *= monkey.testConstant
+	}
+
+	for i := 0; i < 10000; i++ {
 		// Process Monkeys
 		for idx, monkey := range monkeyList {
 			for _, item := range monkey.items {
 				monkeyList[idx].inspectionCount++
-				var num int
+				var num uint64
 				if monkey.operation.value == "old" {
 					num = item
 				} else {
-					num, _ = strconv.Atoi(monkey.operation.value)
+					num, _ = strconv.ParseUint(monkey.operation.value, 10, 64)
 				}
 
 				// Inspect Item
@@ -130,8 +136,8 @@ func main() {
 				}
 
 				// Decrease Worry
-				item = item / 3
-
+				//item = item / 3
+				item = item % gcf
 				// Pass item
 				if item%monkey.testConstant == 0 {
 					monkeyList[monkey.trueMonkey].items = append(monkeyList[monkey.trueMonkey].items, item)
@@ -139,11 +145,22 @@ func main() {
 					monkeyList[monkey.falseMonkey].items = append(monkeyList[monkey.falseMonkey].items, item)
 				}
 			}
-			monkeyList[idx].items = make([]int, 0)
+			monkeyList[idx].items = make([]uint64, 0)
 		}
 	}
 
-	for idx, monkey := range monkeyList {
-		fmt.Printf("Monkey %d inspected %d items\n", idx, monkey.inspectionCount)
+	sortedInspectionCount := make([]int, 0)
+
+	for _, monkey := range monkeyList {
+		sortedInspectionCount = append(sortedInspectionCount, monkey.inspectionCount)
+		fmt.Println(monkey.inspectionCount)
 	}
+
+	sort.Sort(sort.Reverse(sort.IntSlice(sortedInspectionCount)))
+	for _, count := range sortedInspectionCount {
+		_ = count
+		//fmt.Println(count)
+	}
+	fmt.Println("solution: ", sortedInspectionCount[0]*sortedInspectionCount[1])
+
 }
