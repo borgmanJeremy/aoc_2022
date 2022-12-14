@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -27,11 +28,12 @@ type OperationData struct {
 }
 
 type Monkey struct {
-	items        []int
-	operation    OperationData
-	testConstant int
-	trueMonkey   int
-	falseMonkey  int
+	items           []int
+	operation       OperationData
+	testConstant    int
+	trueMonkey      int
+	falseMonkey     int
+	inspectionCount int
 }
 
 func parseItems(scanner *bufio.Scanner) []int {
@@ -77,7 +79,7 @@ func parseTestConstant(scanner *bufio.Scanner) int {
 }
 
 func main() {
-	instructions, err := os.Open("input/sample.txt")
+	instructions, err := os.Open("input/input.txt")
 	checkError(err)
 
 	defer instructions.Close()
@@ -97,12 +99,51 @@ func main() {
 			falseClause := parseTestConstant(scanner)
 
 			monkey := Monkey{
-				items:        items,
-				operation:    operationData,
-				testConstant: testConstant,
-				trueMonkey:   trueClause,
-				falseMonkey:  falseClause}
+				items:           items,
+				operation:       operationData,
+				testConstant:    testConstant,
+				trueMonkey:      trueClause,
+				falseMonkey:     falseClause,
+				inspectionCount: 0,
+			}
 			monkeyList = append(monkeyList, monkey)
 		}
+	}
+
+	for i := 0; i < 20; i++ {
+		// Process Monkeys
+		for idx, monkey := range monkeyList {
+			for _, item := range monkey.items {
+				monkeyList[idx].inspectionCount++
+				var num int
+				if monkey.operation.value == "old" {
+					num = item
+				} else {
+					num, _ = strconv.Atoi(monkey.operation.value)
+				}
+
+				// Inspect Item
+				if monkey.operation.operator == Add {
+					item += num
+				} else if monkey.operation.operator == Mult {
+					item *= num
+				}
+
+				// Decrease Worry
+				item = item / 3
+
+				// Pass item
+				if item%monkey.testConstant == 0 {
+					monkeyList[monkey.trueMonkey].items = append(monkeyList[monkey.trueMonkey].items, item)
+				} else {
+					monkeyList[monkey.falseMonkey].items = append(monkeyList[monkey.falseMonkey].items, item)
+				}
+			}
+			monkeyList[idx].items = make([]int, 0)
+		}
+	}
+
+	for idx, monkey := range monkeyList {
+		fmt.Printf("Monkey %d inspected %d items\n", idx, monkey.inspectionCount)
 	}
 }
