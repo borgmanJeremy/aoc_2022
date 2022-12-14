@@ -45,9 +45,11 @@ type CPU struct {
 	instructions       []string
 
 	strength int
+
+	monitor *[][]rune
 }
 
-func makeCPU(instructions []string) *CPU {
+func makeCPU(instructions []string, monitor *[][]rune) *CPU {
 	cpu := new(CPU)
 
 	cpu.clock = 0
@@ -58,6 +60,9 @@ func makeCPU(instructions []string) *CPU {
 	cpu.instructionPointer = 0
 	cpu.instructions = make([]string, len(instructions))
 	copy(cpu.instructions, instructions)
+
+	cpu.monitor = monitor
+
 	return cpu
 }
 
@@ -83,13 +88,22 @@ func (cpu *CPU) decode(instruction string) {
 func (cpu *CPU) tick() {
 
 	cpu.clock += 1
+	// Part 1 calculations
 	if cpu.clock == 20 {
-		fmt.Println("clock: ", cpu.clock, "regx: ", cpu.regX)
 		cpu.strength += (cpu.clock * cpu.regX)
 	} else if (cpu.clock-20)%40 == 0 {
-		fmt.Println("clock: ", cpu.clock, "regx: ", cpu.regX)
 		cpu.strength += (cpu.clock * cpu.regX)
 	}
+
+	// Part 2 calculations
+	row := ((cpu.clock - 1) / 40)
+	col := ((cpu.clock - 1) % 40)
+	spriteCenter := cpu.regX
+
+	if col == spriteCenter || col == spriteCenter+1 || col == spriteCenter-1 {
+		(*cpu.monitor)[row][col] = '#'
+	}
+
 	if cpu.pendingAdd {
 		cpu.clockQueue -= 1
 		if cpu.clockQueue == 0 {
@@ -101,6 +115,15 @@ func (cpu *CPU) tick() {
 		cpu.instructionPointer += 1
 	}
 
+}
+
+func printMonitor(monitor *[][]rune) {
+	for _, row := range *monitor {
+		for _, col := range row {
+			fmt.Print(string(col))
+		}
+		fmt.Println()
+	}
 }
 
 func main() {
@@ -117,10 +140,24 @@ func main() {
 	}
 
 	// create new cpu
-	cpu := makeCPU(instructionList)
+	monitorHeight := 6
+	monitorWidth := 40
+	var monitor [][]rune
+
+	for i := 0; i < monitorHeight; i++ {
+		monitor = append(monitor, make([]rune, monitorWidth))
+		for j := 0; j < monitorWidth; j++ {
+			monitor[i][j] = ' '
+		}
+	}
+
+	cpu := makeCPU(instructionList, &monitor)
 
 	for cpu.instructionPointer < len(cpu.instructions) {
 		cpu.tick()
+		printMonitor(&monitor)
+		fmt.Println()
+		fmt.Println()
 	}
 	fmt.Println("strength: ", cpu.strength)
 }
